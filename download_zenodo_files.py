@@ -10,6 +10,10 @@ files = [
         "dest": "data/cutout/archive/v0.8/europe-2013-sarah3-era5.nc"
     },
     {
+        "url": "https://zenodo.org/records/15349674/files/europe-2020-sarah3-era5.nc",
+        "dest": "data/cutout/archive/v0.8/europe-2020-sarah3-era5.nc"
+    },
+    {
         "url": "https://zenodo.org/records/15879466/files/LUISA_basemap_020321_50m.tif",
         "dest": "data/luisa_land_cover/archive/2021-03-02/LUISA_basemap_020321_50m.tif"
     },
