@@ -331,15 +331,26 @@ def distribute_n_clusters_to_countries(
         lower=1, upper=N, coords=[L.index], name="n", integer=True
     )
     m.add_constraints(clusters.sum() == n_clusters, name="tot")
-    # leave out constant in objective (L * n_clusters) ** 2
-    m.objective = (clusters * clusters - 2 * clusters * L * n_clusters).sum()
-    if solver_name == "gurobi":
-        logging.getLogger("gurobipy").propagate = False
-    elif solver_name not in ["scip", "cplex", "xpress", "copt", "mosek"]:
-        logger.info(
-            f"The configured solver `{solver_name}` does not support quadratic objectives. Falling back to `scip`."
-        )
-        solver_name = "scip"
+
+    if solver_name == "highs":
+        # Use linear formulation for solvers that don't support QP (like HiGHS)
+        logger.info(f"Using linear formulation for cluster distribution with solver `{solver_name}`.")
+        target = L * n_clusters
+        abs_diff = m.add_variables(lower=0, coords=[L.index], name="abs_diff")
+        m.add_constraints(abs_diff >= clusters - target, name="abs_diff_upper")
+        m.add_constraints(abs_diff >= target - clusters, name="abs_diff_lower")
+        m.objective = abs_diff.sum()
+    else:
+        # leave out constant in objective (L * n_clusters) ** 2
+        m.objective = (clusters * clusters - 2 * clusters * L * n_clusters).sum()
+        if solver_name == "gurobi":
+            logging.getLogger("gurobipy").propagate = False
+        elif solver_name not in ["scip", "cplex", "xpress", "copt", "mosek"]:
+            logger.info(
+                f"The configured solver `{solver_name}` does not support quadratic objectives. Falling back to `scip`."
+            )
+            solver_name = "scip"
+    
     m.solve(solver_name=solver_name)
     return m.solution["n"].to_series().astype(int)
 
