@@ -52,6 +52,11 @@ from scripts._helpers import (
     set_scenario_config,
     update_config_from_wildcards,
 )
+from scripts.romania_winter_stress import (
+    add_import_cap_constraints,
+    add_scada_proxy_constraints,
+    apply_timeseries_shocks,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -423,6 +428,7 @@ def add_retrofit_gas_boiler_constraint(
 def prepare_network(
     n: pypsa.Network,
     solve_opts: dict,
+    config: dict,
     foresight: str,
     planning_horizons: str | None,
     co2_sequestration_potential: dict[str, float],
@@ -437,6 +443,8 @@ def prepare_network(
         The PyPSA network instance
     solve_opts : Dict
         Dictionary of solving options containing clip_p_max_pu, load_shedding etc.
+    config : Dict
+        Full scenario configuration dictionary.
     foresight : str
         Planning foresight type ('myopic' or 'perfect')
     planning_horizons : str or None
@@ -511,6 +519,11 @@ def prepare_network(
         nhours = solve_opts["nhours"]
         n.set_snapshots(n.snapshots[:nhours])
         n.snapshot_weightings[:] = 8760.0 / nhours
+
+    stress_cfg = config.get("stress_test", {})
+    if stress_cfg.get("enable", False):
+        logger.info("Applying Romania winter stress timeseries shocks.")
+        apply_timeseries_shocks(n, n.snapshots, stress_cfg)
 
     if foresight == "myopic" and planning_horizons:
         add_land_use_constraint(n, planning_horizons)
@@ -1232,6 +1245,13 @@ def extra_functionality(
     if config["sector"]["imports"]["enable"]:
         add_import_limit_constraint(n, snapshots)
 
+    stress_cfg = config.get("stress_test", {})
+    if stress_cfg.get("enable", False):
+        logger.info("Adding Romania stress SCADA proxy constraints.")
+        add_scada_proxy_constraints(n, snapshots, stress_cfg)
+        logger.info("Adding Romania stress import cap constraints.")
+        add_import_cap_constraints(n, snapshots, stress_cfg)
+
     if n.params.custom_extra_functionality:
         source_path = n.params.custom_extra_functionality
         assert os.path.exists(source_path), f"{source_path} does not exist"
@@ -1437,6 +1457,7 @@ if __name__ == "__main__":
     prepare_network(
         n,
         solve_opts=snakemake.params.solving["options"],
+        config=snakemake.config,
         foresight=snakemake.params.foresight,
         planning_horizons=planning_horizons,
         co2_sequestration_potential=snakemake.params["co2_sequestration_potential"],
