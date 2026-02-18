@@ -52,6 +52,21 @@ You can force a specific env path or env name with:
 - State file: `1_piele_dashboard/scenario_manager_state.json`
 - Job logs: `logs/planui/*.log`
 
+## Proxy Behavior
+By default, PlanUI subprocesses clear proxy environment variables to avoid
+Snakemake storage-plugin failures like `407 Proxy Authentication Required`.
+
+To keep system proxy settings for spawned commands, set:
+- `PLANUI_USE_SYSTEM_PROXY=1`
+
+By default, PlanUI also adds:
+- `--storage-cached-http-skip-remote-checks`
+to Snakemake commands to avoid remote metadata checks that often trigger proxy
+failures in restricted environments.
+
+To disable that flag, set:
+- `PLANUI_SNAKEMAKE_SKIP_REMOTE_CHECKS=0`
+
 ## Result Format
 The results page includes only folders containing all required report CSVs:
 - `system_cost_comparison.csv`

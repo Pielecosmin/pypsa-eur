@@ -253,6 +253,15 @@ def resolve_runtime_prefixes() -> tuple[list[str], list[str], str]:
     return [sys.executable, "-m", "snakemake"], [sys.executable], "active-python"
 
 
+def _snakemake_extra_args() -> list[str]:
+    # Default to skipping cached-http remote metadata checks to avoid proxy
+    # authentication failures during DAG build in locked-down environments.
+    raw = os.environ.get("PLANUI_SNAKEMAKE_SKIP_REMOTE_CHECKS", "1").strip().lower()
+    if raw in {"0", "false", "no"}:
+        return []
+    return ["--storage-cached-http-skip-remote-checks"]
+
+
 def build_working_config(
     *,
     inputs: ScenarioInputs,
@@ -355,6 +364,7 @@ def build_commands(
     report_outdir = str(build_result.report_outdir)
 
     commands: list[CommandSpec] = []
+    extra = _snakemake_extra_args()
 
     if inputs.run_mode == "paired":
         baseline_cfg_path = build_result.generated_configs.get("baseline")
@@ -366,13 +376,14 @@ def build_commands(
         commands.extend(
             [
                 CommandSpec(
-                    argv=[*snakemake_prefix, "--unlock", "--configfile", baseline_cfg],
+                    argv=[*snakemake_prefix, *extra, "--unlock", "--configfile", baseline_cfg],
                     description=f"Unlock baseline workflow [{runtime_mode}]",
                     allow_failure=True,
                 ),
                 CommandSpec(
                     argv=[
                         *snakemake_prefix,
+                        *extra,
                         "-c",
                         "all",
                         baseline_target,
@@ -391,13 +402,14 @@ def build_commands(
     commands.extend(
         [
             CommandSpec(
-                argv=[*snakemake_prefix, "--unlock", "--configfile", scenario_cfg],
+                argv=[*snakemake_prefix, *extra, "--unlock", "--configfile", scenario_cfg],
                 description=f"Unlock scenario workflow [{runtime_mode}]",
                 allow_failure=True,
             ),
             CommandSpec(
                 argv=[
                     *snakemake_prefix,
+                    *extra,
                     "-c",
                     "all",
                     scenario_target,

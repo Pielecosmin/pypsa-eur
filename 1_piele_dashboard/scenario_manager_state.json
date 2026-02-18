@@ -553,12 +553,251 @@
         "baseline_run_name": null,
         "country": "RO"
       },
-      "status": "running",
+      "status": "failed",
       "started_at": "2026-02-18T11:02:47.549011+00:00",
+      "finished_at": "2026-02-18T11:04:47.218932+00:00",
+      "exit_code": 1,
+      "error_summary": "ERROR conda.cli.main_run:execute(127): `conda run python -m snakemake -c all results/romania-winter-stress2019-scenario-20260218110247/networks/base_s_10_elec_.nc --configfile C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\config\\adversarial\\generated\\romania-winter-stress2019_20260218110247_scenario.yaml` failed. (See above for error)",
+      "progress_message": "ERROR conda.cli.main_run:execute(127): `conda run python -m snakemake -c all results/romania-winter-stress2019-scenario-20260218110247/networks/base_s_10_elec_.nc --configfile C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\config\\adversarial\\generated\\romania-winter-stress2019_20260218110247_scenario.yaml` failed. (See above for error)",
+      "cancel_requested": false
+    },
+    {
+      "spec": {
+        "job_id": "2ad5d8e531b5",
+        "output_name": "winter201922",
+        "mode": "single",
+        "created_at": "2026-02-18T11:07:12.579183+00:00",
+        "commands": [
+          {
+            "argv": [
+              "C:\\ProgramData\\anaconda3\\Scripts\\conda.exe",
+              "run",
+              "-p",
+              "C:\\Users\\Administrator\\.conda\\envs\\pypsa-eur",
+              "python",
+              "-m",
+              "snakemake",
+              "--unlock",
+              "--configfile",
+              "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\config\\adversarial\\generated\\romania-winter-stress2019_20260218110712_scenario.yaml"
+            ],
+            "description": "Unlock scenario workflow [conda-run-prefix]",
+            "allow_failure": true
+          },
+          {
+            "argv": [
+              "C:\\ProgramData\\anaconda3\\Scripts\\conda.exe",
+              "run",
+              "-p",
+              "C:\\Users\\Administrator\\.conda\\envs\\pypsa-eur",
+              "python",
+              "-m",
+              "snakemake",
+              "-c",
+              "all",
+              "results/romania-winter-stress2019-scenario-20260218110712/networks/base_s_10_elec_.nc",
+              "--configfile",
+              "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\config\\adversarial\\generated\\romania-winter-stress2019_20260218110712_scenario.yaml"
+            ],
+            "description": "Solve scenario [conda-run-prefix]",
+            "allow_failure": false
+          },
+          {
+            "argv": [
+              "C:\\ProgramData\\anaconda3\\Scripts\\conda.exe",
+              "run",
+              "-p",
+              "C:\\Users\\Administrator\\.conda\\envs\\pypsa-eur",
+              "python",
+              "scripts/report_romania_winter_stress.py",
+              "--baseline-net",
+              "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\results\\romania-test\\networks\\base_s_5_elec_.nc",
+              "--scenario-net",
+              "results/romania-winter-stress2019-scenario-20260218110712/networks/base_s_10_elec_.nc",
+              "--country",
+              "RO",
+              "--outdir",
+              "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\results\\winter201922"
+            ],
+            "description": "Generate comparison report [conda-run-prefix]",
+            "allow_failure": false
+          }
+        ],
+        "generated_configs": [
+          "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\config\\adversarial\\generated\\romania-winter-stress2019_20260218110712_scenario.yaml"
+        ],
+        "report_outdir": "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\results\\winter201922",
+        "log_path": "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\logs\\planui\\2ad5d8e531b5.log",
+        "scenario_run_name": "romania-winter-stress2019-scenario-20260218110712",
+        "baseline_run_name": null,
+        "country": "RO"
+      },
+      "status": "interrupted",
+      "started_at": "2026-02-18T11:07:12.579381+00:00",
+      "finished_at": "2026-02-18T11:07:12.579381+00:00",
+      "exit_code": null,
+      "error_summary": null,
+      "progress_message": "Interrupted by app restart.",
+      "cancel_requested": false
+    },
+    {
+      "spec": {
+        "job_id": "e0ef7f4e3a6e",
+        "output_name": "winter201922",
+        "mode": "single",
+        "created_at": "2026-02-18T11:09:15.340458+00:00",
+        "commands": [
+          {
+            "argv": [
+              "C:\\ProgramData\\anaconda3\\Scripts\\conda.exe",
+              "run",
+              "-p",
+              "C:\\Users\\Administrator\\.conda\\envs\\pypsa-eur",
+              "python",
+              "-m",
+              "snakemake",
+              "--unlock",
+              "--configfile",
+              "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\config\\adversarial\\generated\\romania-winter-stress2019_20260218110915_scenario.yaml"
+            ],
+            "description": "Unlock scenario workflow [conda-run-prefix]",
+            "allow_failure": true
+          },
+          {
+            "argv": [
+              "C:\\ProgramData\\anaconda3\\Scripts\\conda.exe",
+              "run",
+              "-p",
+              "C:\\Users\\Administrator\\.conda\\envs\\pypsa-eur",
+              "python",
+              "-m",
+              "snakemake",
+              "-c",
+              "all",
+              "results/romania-winter-stress2019-scenario-20260218110915/networks/base_s_10_elec_.nc",
+              "--configfile",
+              "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\config\\adversarial\\generated\\romania-winter-stress2019_20260218110915_scenario.yaml"
+            ],
+            "description": "Solve scenario [conda-run-prefix]",
+            "allow_failure": false
+          },
+          {
+            "argv": [
+              "C:\\ProgramData\\anaconda3\\Scripts\\conda.exe",
+              "run",
+              "-p",
+              "C:\\Users\\Administrator\\.conda\\envs\\pypsa-eur",
+              "python",
+              "scripts/report_romania_winter_stress.py",
+              "--baseline-net",
+              "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\results\\romania-test\\networks\\base_s_5_elec_.nc",
+              "--scenario-net",
+              "results/romania-winter-stress2019-scenario-20260218110915/networks/base_s_10_elec_.nc",
+              "--country",
+              "RO",
+              "--outdir",
+              "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\results\\winter201922"
+            ],
+            "description": "Generate comparison report [conda-run-prefix]",
+            "allow_failure": false
+          }
+        ],
+        "generated_configs": [
+          "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\config\\adversarial\\generated\\romania-winter-stress2019_20260218110915_scenario.yaml"
+        ],
+        "report_outdir": "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\results\\winter201922",
+        "log_path": "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\logs\\planui\\e0ef7f4e3a6e.log",
+        "scenario_run_name": "romania-winter-stress2019-scenario-20260218110915",
+        "baseline_run_name": null,
+        "country": "RO"
+      },
+      "status": "failed",
+      "started_at": "2026-02-18T11:09:15.341128+00:00",
+      "finished_at": "2026-02-18T11:11:03.194386+00:00",
+      "exit_code": 1,
+      "error_summary": "ERROR conda.cli.main_run:execute(127): `conda run python -m snakemake -c all results/romania-winter-stress2019-scenario-20260218110915/networks/base_s_10_elec_.nc --configfile C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\config\\adversarial\\generated\\romania-winter-stress2019_20260218110915_scenario.yaml` failed. (See above for error)",
+      "progress_message": "ERROR conda.cli.main_run:execute(127): `conda run python -m snakemake -c all results/romania-winter-stress2019-scenario-20260218110915/networks/base_s_10_elec_.nc --configfile C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\config\\adversarial\\generated\\romania-winter-stress2019_20260218110915_scenario.yaml` failed. (See above for error)",
+      "cancel_requested": false
+    },
+    {
+      "spec": {
+        "job_id": "f5488bbbcc7d",
+        "output_name": "winter201922",
+        "mode": "single",
+        "created_at": "2026-02-18T11:13:57.689354+00:00",
+        "commands": [
+          {
+            "argv": [
+              "C:\\ProgramData\\anaconda3\\Scripts\\conda.exe",
+              "run",
+              "-p",
+              "C:\\Users\\Administrator\\.conda\\envs\\pypsa-eur",
+              "python",
+              "-m",
+              "snakemake",
+              "--storage-cached-http-skip-remote-checks",
+              "--unlock",
+              "--configfile",
+              "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\config\\adversarial\\generated\\romania-winter-stress2019_20260218111357_scenario.yaml"
+            ],
+            "description": "Unlock scenario workflow [conda-run-prefix]",
+            "allow_failure": true
+          },
+          {
+            "argv": [
+              "C:\\ProgramData\\anaconda3\\Scripts\\conda.exe",
+              "run",
+              "-p",
+              "C:\\Users\\Administrator\\.conda\\envs\\pypsa-eur",
+              "python",
+              "-m",
+              "snakemake",
+              "--storage-cached-http-skip-remote-checks",
+              "-c",
+              "all",
+              "results/romania-winter-stress2019-scenario-20260218111357/networks/base_s_10_elec_.nc",
+              "--configfile",
+              "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\config\\adversarial\\generated\\romania-winter-stress2019_20260218111357_scenario.yaml"
+            ],
+            "description": "Solve scenario [conda-run-prefix]",
+            "allow_failure": false
+          },
+          {
+            "argv": [
+              "C:\\ProgramData\\anaconda3\\Scripts\\conda.exe",
+              "run",
+              "-p",
+              "C:\\Users\\Administrator\\.conda\\envs\\pypsa-eur",
+              "python",
+              "scripts/report_romania_winter_stress.py",
+              "--baseline-net",
+              "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\results\\romania-test\\networks\\base_s_5_elec_.nc",
+              "--scenario-net",
+              "results/romania-winter-stress2019-scenario-20260218111357/networks/base_s_10_elec_.nc",
+              "--country",
+              "RO",
+              "--outdir",
+              "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\results\\winter201922"
+            ],
+            "description": "Generate comparison report [conda-run-prefix]",
+            "allow_failure": false
+          }
+        ],
+        "generated_configs": [
+          "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\config\\adversarial\\generated\\romania-winter-stress2019_20260218111357_scenario.yaml"
+        ],
+        "report_outdir": "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\results\\winter201922",
+        "log_path": "C:\\Users\\Administrator\\Desktop\\newPyPSA\\pypsa-eur\\logs\\planui\\f5488bbbcc7d.log",
+        "scenario_run_name": "romania-winter-stress2019-scenario-20260218111357",
+        "baseline_run_name": null,
+        "country": "RO"
+      },
+      "status": "running",
+      "started_at": "2026-02-18T11:13:57.690150+00:00",
       "finished_at": null,
       "exit_code": null,
       "error_summary": null,
-      "progress_message": "Unlock scenario workflow [conda-run-prefix]",
+      "progress_message": "Solve scenario [conda-run-prefix]",
       "cancel_requested": false
     }
   ]

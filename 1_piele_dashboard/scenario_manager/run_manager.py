@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import os
 import subprocess
 import threading
 from datetime import datetime, timezone
@@ -12,6 +13,32 @@ from scenario_manager.types import JobRecord, JobSpec
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _subprocess_env() -> dict[str, str]:
+    env = dict(os.environ)
+    # Default behavior: avoid inherited proxy auth failures (HTTP 407) in Snakemake's
+    # storage metadata checks. Set PLANUI_USE_SYSTEM_PROXY=1 to keep proxy vars.
+    keep_proxy = env.get("PLANUI_USE_SYSTEM_PROXY", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    if keep_proxy:
+        return env
+
+    for key in (
+        "HTTP_PROXY",
+        "HTTPS_PROXY",
+        "ALL_PROXY",
+        "NO_PROXY",
+        "http_proxy",
+        "https_proxy",
+        "all_proxy",
+        "no_proxy",
+    ):
+        env.pop(key, None)
+    return env
 
 
 class RunManager:
@@ -134,6 +161,7 @@ class RunManager:
                     process = subprocess.Popen(
                         command.argv,
                         cwd=self.repo_root,
+                        env=_subprocess_env(),
                         stdout=subprocess.PIPE,
                         stderr=subprocess.STDOUT,
                         text=True,

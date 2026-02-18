@@ -260,5 +260,33 @@ def test_build_commands_prefers_conda_prefix(monkeypatch: pytest.MonkeyPatch, tm
         "python",
         "-m",
         "snakemake",
-        "--unlock",
+        "--storage-cached-http-skip-remote-checks",
     ]
+
+
+def test_build_commands_allows_disabling_skip_remote_checks(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(config_builder, "_has_module", lambda _: False)
+    monkeypatch.setattr(config_builder, "_find_conda_executable", lambda: "conda")
+    monkeypatch.setattr(
+        config_builder,
+        "_select_conda_prefix",
+        lambda: r"C:\Users\Administrator\.conda\envs\pypsa-eur",
+    )
+    monkeypatch.setenv("PLANUI_SNAKEMAKE_SKIP_REMOTE_CHECKS", "0")
+
+    result = ConfigBuildResult(
+        generated_configs={
+            "scenario": tmp_path / "scenario.yaml",
+            "baseline": tmp_path / "baseline.yaml",
+        },
+        scenario_run_name="scenario-x",
+        baseline_run_name="baseline-x",
+        scenario_network_target=tmp_path / "results" / "scenario-x" / "networks" / "base_s_10_elec_.nc",
+        baseline_network_target=tmp_path / "results" / "baseline-x" / "networks" / "base_s_10_elec_.nc",
+        report_outdir=tmp_path / "results" / "comparison-x",
+        scenario_config={},
+        baseline_config={},
+    )
+
+    commands = build_commands(inputs=_inputs(), build_result=result)
+    assert "--storage-cached-http-skip-remote-checks" not in commands[0].argv
