@@ -19,9 +19,9 @@ def main() -> None:
     baseline_cfg = "config/adversarial/romania_2019_winter_baseline.yaml"
     stress_cfg = "config/adversarial/romania_2019_winter_stress.yaml"
 
-    baseline_target = "results/romania-2019-winter-baseline/networks/base_s_10_elec_.nc"
-    stress_target = "results/romania-2019-winter-stress/networks/base_s_10_elec_.nc"
-    outdir = "results/romania-2019-winter-stress-comparison"
+    baseline_target = "results/romania-2020-winter-baseline/networks/base_s_10_elec_.nc"
+    stress_target = "results/romania-2020-winter-stress/networks/base_s_10_elec_.nc"
+    outdir = "results/romania-2020-winter-stress-comparison"
 
     try:
         run_command(

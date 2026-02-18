@@ -1,8 +1,8 @@
-# Romania Winter 2019 Stress Scenario (all shocks combined)
+# Romania Winter 2020 Stress Scenario (all shocks combined)
 
 tutorial: true
 run:
-  name: romania-2019-winter-stress
+  name: romania-2020-winter-stress
   disable_progressbar: true
   shared_resources:
     policy: false
@@ -20,9 +20,8 @@ countries:
 - RS
 
 snapshots:
-  start: '2019-01-13 22:00'
-  end: '2019-01-20 22:00'
-  inclusive: left
+  start: '2020-12-01'
+  end: '2020-12-08'
 
 electricity:
   co2limit_enable: true
@@ -40,7 +39,7 @@ electricity:
   estimate_renewable_capacities:
     enable: true
     from_gem: true
-    year: 2019
+    year: 2020
     expansion_limit: false
     technology_mapping:
       Offshore: offwind-ac
@@ -48,9 +47,9 @@ electricity:
       PV: solar
 
 atlite:
-  default_cutout: europe-2019-era5
+  default_cutout: europe-2020-sarah3-era5
   cutouts:
-    europe-2019-era5:
+    europe-2020-sarah3-era5:
       module: era5
       x:
       - -12.0
@@ -61,8 +60,8 @@ atlite:
       dx: 0.3
       dy: 0.3
       time:
-      - '2019'
-      - '2019'
+      - '2020'
+      - '2020'
 
 renewable:
   hydro:
