@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 import copy
+import importlib.util
+import json
+import os
 import re
+import shutil
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -11,6 +17,7 @@ import yaml
 from scenario_manager.types import CommandSpec, ConfigBuildResult, ScenarioInputs
 
 GENERATED_CONFIG_DIR = Path("config/adversarial/generated")
+DEFAULT_CONDA_PREFIX = Path(r"C:\Users\Administrator\.conda\envs\pypsa-eur")
 
 
 def sanitize_slug(value: str) -> str:
@@ -117,6 +124,135 @@ def _network_target(run_name: str, clusters: int) -> Path:
     return Path("results") / run_name / "networks" / f"base_s_{clusters}_elec_.nc"
 
 
+def _snake_target_str(path: Path) -> str:
+    return path.as_posix()
+
+
+def _has_module(module_name: str) -> bool:
+    return importlib.util.find_spec(module_name) is not None
+
+
+def _find_conda_executable() -> str | None:
+    candidates: list[str] = []
+
+    conda_env_var = os.environ.get("CONDA_EXE")
+    if conda_env_var:
+        candidates.append(conda_env_var)
+
+    py_dir = Path(sys.executable).resolve().parent
+    candidates.extend(
+        [
+            str(py_dir / "conda.exe"),
+            str(py_dir / "Scripts" / "conda.exe"),
+        ]
+    )
+
+    which_conda = shutil.which("conda")
+    if which_conda:
+        candidates.append(which_conda)
+
+    for candidate in candidates:
+        path = Path(candidate)
+        if path.exists():
+            return str(path)
+    return None
+
+
+def _list_conda_env_names(conda_exe: str) -> set[str]:
+    try:
+        completed = subprocess.run(
+            [conda_exe, "env", "list", "--json"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return set()
+
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        return set()
+
+    env_paths = payload.get("envs", [])
+    names: set[str] = set()
+    for entry in env_paths:
+        path = Path(str(entry))
+        names.add(path.name)
+    return names
+
+
+def _select_conda_env_name(conda_exe: str) -> str:
+    explicit = os.environ.get("PLANUI_CONDA_ENV")
+    if explicit:
+        return explicit
+
+    candidates: list[str] = []
+    current = os.environ.get("CONDA_DEFAULT_ENV")
+    if current and current != "base":
+        candidates.append(current)
+    candidates.extend(["pypsa", "pypsa-eur"])
+
+    available = _list_conda_env_names(conda_exe)
+    if available:
+        for name in candidates:
+            if name in available:
+                return name
+    return candidates[0]
+
+
+def _select_conda_prefix() -> str | None:
+    explicit = os.environ.get("PLANUI_CONDA_PREFIX")
+    if explicit:
+        path = Path(explicit)
+        if path.exists():
+            return str(path)
+        return None
+
+    if DEFAULT_CONDA_PREFIX.exists():
+        return str(DEFAULT_CONDA_PREFIX)
+    return None
+
+
+def resolve_runtime_prefixes() -> tuple[list[str], list[str], str]:
+    """Resolve execution prefixes for snakemake and python commands.
+
+    Priority:
+    1. Preferred conda prefix (`conda run -p ...`) when available.
+    2. Current interpreter if it has snakemake.
+    3. Conda fallback (`conda run -n ...`) when available.
+    4. PATH snakemake executable fallback.
+    """
+    conda_exe = _find_conda_executable()
+    conda_prefix = _select_conda_prefix()
+    if conda_exe and conda_prefix:
+        return (
+            [conda_exe, "run", "-p", conda_prefix, "python", "-m", "snakemake"],
+            [conda_exe, "run", "-p", conda_prefix, "python"],
+            "conda-run-prefix",
+        )
+
+    if _has_module("snakemake"):
+        return [sys.executable, "-m", "snakemake"], [sys.executable], "active-python"
+
+    if conda_exe:
+        env_name = _select_conda_env_name(conda_exe)
+        return (
+            [conda_exe, "run", "-n", env_name, "python", "-m", "snakemake"],
+            [conda_exe, "run", "-n", env_name, "python"],
+            "conda-run",
+        )
+
+    snakemake_exe = shutil.which("snakemake")
+    if snakemake_exe:
+        snakemake_path = Path(snakemake_exe)
+        candidate_python = snakemake_path.parent / "python.exe"
+        python_prefix = [str(candidate_python)] if candidate_python.exists() else [sys.executable]
+        return [snakemake_exe], python_prefix, "path-snakemake"
+
+    return [sys.executable, "-m", "snakemake"], [sys.executable], "active-python"
+
+
 def build_working_config(
     *,
     inputs: ScenarioInputs,
@@ -193,12 +329,8 @@ def build_configs(
         baseline_cfg_path.write_text(dump_yaml(baseline_cfg), encoding="utf-8")
         generated["baseline"] = baseline_cfg_path
 
-    scenario_target = repo_root / _network_target(scenario_run_name, inputs.clusters)
-    baseline_target = (
-        repo_root / _network_target(baseline_run_name or "", inputs.clusters)
-        if baseline_run_name
-        else None
-    )
+    scenario_target = _network_target(scenario_run_name, inputs.clusters)
+    baseline_target = _network_target(baseline_run_name or "", inputs.clusters) if baseline_run_name else None
 
     return ConfigBuildResult(
         generated_configs=generated,
@@ -217,8 +349,9 @@ def build_commands(
     inputs: ScenarioInputs,
     build_result: ConfigBuildResult,
 ) -> list[CommandSpec]:
+    snakemake_prefix, python_prefix, runtime_mode = resolve_runtime_prefixes()
     scenario_cfg = str(build_result.generated_configs["scenario"])
-    scenario_target = str(build_result.scenario_network_target)
+    scenario_target = _snake_target_str(build_result.scenario_network_target)
     report_outdir = str(build_result.report_outdir)
 
     commands: list[CommandSpec] = []
@@ -228,24 +361,25 @@ def build_commands(
         if baseline_cfg_path is None or build_result.baseline_network_target is None:
             raise ValueError("Paired mode requires generated baseline config and target.")
         baseline_cfg = str(baseline_cfg_path)
-        baseline_target = str(build_result.baseline_network_target)
+        baseline_target = _snake_target_str(build_result.baseline_network_target)
 
         commands.extend(
             [
                 CommandSpec(
-                    argv=["snakemake", "--unlock", "--configfile", baseline_cfg],
-                    description="Unlock baseline workflow",
+                    argv=[*snakemake_prefix, "--unlock", "--configfile", baseline_cfg],
+                    description=f"Unlock baseline workflow [{runtime_mode}]",
+                    allow_failure=True,
                 ),
                 CommandSpec(
                     argv=[
-                        "snakemake",
+                        *snakemake_prefix,
                         "-c",
                         "all",
                         baseline_target,
                         "--configfile",
                         baseline_cfg,
                     ],
-                    description="Solve baseline scenario",
+                    description=f"Solve baseline scenario [{runtime_mode}]",
                 ),
             ]
         )
@@ -257,23 +391,24 @@ def build_commands(
     commands.extend(
         [
             CommandSpec(
-                argv=["snakemake", "--unlock", "--configfile", scenario_cfg],
-                description="Unlock scenario workflow",
+                argv=[*snakemake_prefix, "--unlock", "--configfile", scenario_cfg],
+                description=f"Unlock scenario workflow [{runtime_mode}]",
+                allow_failure=True,
             ),
             CommandSpec(
                 argv=[
-                    "snakemake",
+                    *snakemake_prefix,
                     "-c",
                     "all",
                     scenario_target,
                     "--configfile",
                     scenario_cfg,
                 ],
-                description="Solve scenario",
+                description=f"Solve scenario [{runtime_mode}]",
             ),
             CommandSpec(
                 argv=[
-                    "python",
+                    *python_prefix,
                     "scripts/report_romania_winter_stress.py",
                     "--baseline-net",
                     baseline_net,
@@ -284,7 +419,7 @@ def build_commands(
                     "--outdir",
                     report_outdir,
                 ],
-                description="Generate comparison report",
+                description=f"Generate comparison report [{runtime_mode}]",
             ),
         ]
     )

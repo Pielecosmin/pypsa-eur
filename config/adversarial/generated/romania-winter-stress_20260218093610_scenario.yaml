@@ -1,0 +1,112 @@
+tutorial: true
+run:
+  name: romania-winter-stress-scenario-20260218093610
+  disable_progressbar: true
+  shared_resources:
+    policy: false
+scenario:
+  clusters:
+  - 10
+  opts:
+  - ''
+countries:
+- RO
+- BG
+- HU
+- RS
+snapshots:
+  start: '2020-12-01'
+  end: '2020-12-08'
+electricity:
+  co2limit_enable: true
+  co2limit: 100000000.0
+  extendable_carriers:
+    Generator: []
+    StorageUnit: []
+    Store: []
+    Link: []
+  renewable_carriers:
+  - solar
+  - onwind
+  - offwind-ac
+  - hydro
+  estimate_renewable_capacities:
+    enable: true
+    from_gem: true
+    year: 2020
+    expansion_limit: false
+    technology_mapping:
+      Offshore: offwind-ac
+      Onshore: onwind
+      PV: solar
+atlite:
+  default_cutout: europe-2020-sarah3-era5
+  cutouts:
+    europe-2020-sarah3-era5:
+      module: era5
+      x:
+      - -12.0
+      - 35.0
+      y:
+      - 33.0
+      - 72.0
+      dx: 0.3
+      dy: 0.3
+      time:
+      - '2020'
+      - '2020'
+renewable:
+  hydro:
+    carriers:
+    - ror
+    - PHS
+    - hydro
+    PHS_max_hours: 6
+    hydro_max_hours: energy_capacity_totals_by_country
+    flatten_dispatch: true
+    flatten_dispatch_buffer: 0.2
+    clip_min_inflow: 1.0
+  offwind-ac:
+    max_depth: false
+  offwind-dc:
+    max_depth: false
+  offwind-float:
+    max_depth: false
+    min_depth: false
+clustering:
+  exclude_carriers:
+  - OCGT
+  - offwind-ac
+  - coal
+  temporal:
+    resolution_elec: false
+lines:
+  max_extension: 500
+  dynamic_line_rating:
+    activate: false
+    max_line_rating: 1.0
+links:
+  max_extension: 500
+solving:
+  solver:
+    name: highs
+    options: highs-simplex
+  options:
+    load_shedding: 100000
+  check_objective:
+    enable: false
+stress_test:
+  enable: true
+  country: RO
+  load_factor_full_window: 1.16
+  hydro_factor_full_window: 0.6
+  gas_factor_first_72h: 0.7
+  scada:
+    tight_hours: 24
+    relaxed_hours: 48
+    ramp_tight_per_hour: 0.1
+    ramp_relaxed_per_hour: 0.25
+  import_cap:
+    zero_hours: 48
+    half_hours: 48
+    half_factor: 0.5

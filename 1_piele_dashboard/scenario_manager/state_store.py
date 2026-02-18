@@ -18,6 +18,7 @@ def _command_from_dict(data: dict[str, Any]) -> CommandSpec:
     return CommandSpec(
         argv=list(data.get("argv", [])),
         description=str(data.get("description", "")),
+        allow_failure=bool(data.get("allow_failure", False)),
     )
 
 

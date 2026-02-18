@@ -50,6 +50,7 @@ class ScenarioInputs:
 class CommandSpec:
     argv: list[str]
     description: str
+    allow_failure: bool = False
 
 
 @dataclass

@@ -493,7 +493,14 @@ class ScenarioManagerUI:
             output_name=inputs.output_name,
             mode=inputs.run_mode,  # type: ignore[arg-type]
             created_at=self._now_iso(),
-            commands=[CommandSpec(argv=list(c.argv), description=c.description) for c in commands],
+            commands=[
+                CommandSpec(
+                    argv=list(c.argv),
+                    description=c.description,
+                    allow_failure=bool(c.allow_failure),
+                )
+                for c in commands
+            ],
             generated_configs=[str(path) for path in result.generated_configs.values()],
             report_outdir=str(result.report_outdir),
             log_path=str(self.logs_dir / f"{job_id}.log"),

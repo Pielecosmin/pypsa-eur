@@ -12,11 +12,18 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "1_piele_dashboard"))
 
-from scenario_manager.config_builder import build_configs
+from scenario_manager import config_builder
+from scenario_manager.config_builder import build_commands, build_configs
 from scenario_manager.results_index import REQUIRED_CSVS, scan_new_format_results
 from scenario_manager.run_manager import RunManager
 from scenario_manager.state_store import load_state
-from scenario_manager.types import CommandSpec, JobSpec, ScenarioInputs, StressParams
+from scenario_manager.types import (
+    CommandSpec,
+    ConfigBuildResult,
+    JobSpec,
+    ScenarioInputs,
+    StressParams,
+)
 
 
 def _inputs(run_mode: str = "paired", baseline: str | None = None) -> ScenarioInputs:
@@ -49,6 +56,8 @@ def test_build_configs_template_immutable_and_paired(tmp_path: Path) -> None:
 
     assert "scenario" in result.generated_configs
     assert "baseline" in result.generated_configs
+    assert not result.scenario_network_target.is_absolute()
+    assert not result.baseline_network_target.is_absolute()
     baseline_cfg = yaml.safe_load(result.generated_configs["baseline"].read_text(encoding="utf-8"))
     assert baseline_cfg["stress_test"]["enable"] is False
     assert template_path.read_text(encoding="utf-8") == before
@@ -190,3 +199,66 @@ def test_run_manager_queue_and_failed_job(tmp_path: Path) -> None:
         assert jobs["job2"].exit_code == 3
     finally:
         manager.shutdown()
+
+
+def test_build_commands_conda_fallback_when_snakemake_module_missing(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(config_builder, "_has_module", lambda _: False)
+    monkeypatch.setattr(config_builder, "_find_conda_executable", lambda: "conda")
+    monkeypatch.setattr(config_builder, "_select_conda_prefix", lambda: None)
+    monkeypatch.setenv("PLANUI_CONDA_ENV", "pypsa")
+
+    result = ConfigBuildResult(
+        generated_configs={
+            "scenario": tmp_path / "scenario.yaml",
+            "baseline": tmp_path / "baseline.yaml",
+        },
+        scenario_run_name="scenario-x",
+        baseline_run_name="baseline-x",
+        scenario_network_target=tmp_path / "results" / "scenario-x" / "networks" / "base_s_10_elec_.nc",
+        baseline_network_target=tmp_path / "results" / "baseline-x" / "networks" / "base_s_10_elec_.nc",
+        report_outdir=tmp_path / "results" / "comparison-x",
+        scenario_config={},
+        baseline_config={},
+    )
+
+    commands = build_commands(inputs=_inputs(), build_result=result)
+    assert commands
+    assert commands[0].argv[:7] == ["conda", "run", "-n", "pypsa", "python", "-m", "snakemake"]
+    assert commands[-1].argv[:5] == ["conda", "run", "-n", "pypsa", "python"]
+
+
+def test_build_commands_prefers_conda_prefix(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(config_builder, "_has_module", lambda _: False)
+    monkeypatch.setattr(config_builder, "_find_conda_executable", lambda: "conda")
+    monkeypatch.setattr(
+        config_builder,
+        "_select_conda_prefix",
+        lambda: r"C:\Users\Administrator\.conda\envs\pypsa-eur",
+    )
+
+    result = ConfigBuildResult(
+        generated_configs={
+            "scenario": tmp_path / "scenario.yaml",
+            "baseline": tmp_path / "baseline.yaml",
+        },
+        scenario_run_name="scenario-x",
+        baseline_run_name="baseline-x",
+        scenario_network_target=tmp_path / "results" / "scenario-x" / "networks" / "base_s_10_elec_.nc",
+        baseline_network_target=tmp_path / "results" / "baseline-x" / "networks" / "base_s_10_elec_.nc",
+        report_outdir=tmp_path / "results" / "comparison-x",
+        scenario_config={},
+        baseline_config={},
+    )
+
+    commands = build_commands(inputs=_inputs(), build_result=result)
+    assert commands
+    assert commands[0].argv[:8] == [
+        "conda",
+        "run",
+        "-p",
+        r"C:\Users\Administrator\.conda\envs\pypsa-eur",
+        "python",
+        "-m",
+        "snakemake",
+        "--unlock",
+    ]

@@ -243,6 +243,15 @@ def _save_figure(fig: plt.Figure, base_path: Path) -> None:
     plt.close(fig)
 
 
+def _to_bucharest_index(index: pd.Index) -> pd.DatetimeIndex:
+    dti = pd.DatetimeIndex(index)
+    if dti.tz is None:
+        dti = dti.tz_localize("UTC")
+    else:
+        dti = dti.tz_convert("UTC")
+    return dti.tz_convert("Europe/Bucharest")
+
+
 def _write_assumptions_note(outdir: Path, country: str, has_interconnectors: bool) -> None:
     text = f"""# Romania Winter 2019 Stress Scenario: Assumptions and Limitations
 
@@ -357,12 +366,11 @@ def main() -> None:
     lmp_df.to_csv(outdir / "lmp_summary_ro.csv", index=False)
 
     # Figure 1: Shedding timeseries
-    local_index = pd.DatetimeIndex(baseline_shed.index).tz_localize("UTC").tz_convert(
-        "Europe/Bucharest"
-    )
+    baseline_index_local = _to_bucharest_index(baseline_shed.index)
+    scenario_index_local = _to_bucharest_index(scenario_shed.index)
     fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(local_index, baseline_shed.values, label="Baseline", linewidth=1.6)
-    ax.plot(local_index, scenario_shed.values, label="Scenario", linewidth=1.6)
+    ax.plot(baseline_index_local, baseline_shed.values, label="Baseline", linewidth=1.6)
+    ax.plot(scenario_index_local, scenario_shed.values, label="Scenario", linewidth=1.6)
     ax.set_ylabel("Load Shedding (MW)")
     ax.set_title(f"{country} Load Shedding Timeseries")
     ax.grid(alpha=0.3)

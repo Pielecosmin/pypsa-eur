@@ -169,6 +169,17 @@ class RunManager:
                         return
 
                     if return_code != 0:
+                        if command.allow_failure:
+                            warn = (
+                                f"{command.description} failed with exit code {return_code}; continuing."
+                            )
+                            log_file.write(f"{warn}\n")
+                            log_file.flush()
+                            with self._lock:
+                                job.progress_message = warn
+                            self._notify()
+                            continue
+
                         message = (
                             last_line[:400]
                             if last_line
