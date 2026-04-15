@@ -1,31 +1,22 @@
-# Canonical PlanUI scenario template.
-# This file is read-only for the application.
-# The UI may load and clone it but must never overwrite it.
-
 tutorial: true
-
 run:
-  name: template-run-name
+  name: romania-winter-stress2019-scenario-20260225091934
   disable_progressbar: true
   shared_resources:
     policy: false
-
 scenario:
   clusters:
-    - 10
+  - 10
   opts:
-    - ""
-
+  - ''
 countries:
-  - RO
-  - BG
-  - HU
-  - RS
-
+- RO
+- BG
+- HU
+- RS
 snapshots:
-  start: "2020-12-01"
-  end: "2020-12-08"
-
+  start: '2023-01-03'
+  end: '2023-01-01'
 electricity:
   co2limit_enable: true
   co2limit: 100000000.0
@@ -35,10 +26,10 @@ electricity:
     Store: []
     Link: []
   renewable_carriers:
-    - solar
-    - onwind
-    - offwind-ac
-    - hydro
+  - solar
+  - onwind
+  - offwind-ac
+  - hydro
   estimate_renewable_capacities:
     enable: true
     from_gem: true
@@ -48,43 +39,28 @@ electricity:
       Offshore: offwind-ac
       Onshore: onwind
       PV: solar
-
 atlite:
-  default_cutout: europe-2020-sarah3-era5
+  default_cutout: europe-2023-sarah3-era5
   cutouts:
-    europe-2020-sarah3-era5:
-      module: era5
-      x:
-        - -12.0
-        - 35.0
-      y:
-        - 33.0
-        - 72.0
-      dx: 0.3
-      dy: 0.3
-      time:
-        - "2020"
-        - "2020"
     europe-2023-sarah3-era5:
       module: era5
       x:
-        - -12.0
-        - 35.0
+      - -12.0
+      - 35.0
       y:
-        - 33.0
-        - 72.0
+      - 33.0
+      - 72.0
       dx: 0.3
       dy: 0.3
       time:
-        - "2023"
-        - "2023"
-
+      - '2020'
+      - '2020'
 renewable:
   hydro:
     carriers:
-      - ror
-      - PHS
-      - hydro
+    - ror
+    - PHS
+    - hydro
     PHS_max_hours: 6
     hydro_max_hours: energy_capacity_totals_by_country
     flatten_dispatch: true
@@ -97,24 +73,20 @@ renewable:
   offwind-float:
     max_depth: false
     min_depth: false
-
 clustering:
   exclude_carriers:
-    - OCGT
-    - offwind-ac
-    - coal
+  - OCGT
+  - offwind-ac
+  - coal
   temporal:
     resolution_elec: false
-
 lines:
   max_extension: 500
   dynamic_line_rating:
     activate: false
     max_line_rating: 1.0
-
 links:
   max_extension: 500
-
 solving:
   solver:
     name: highs
@@ -123,19 +95,18 @@ solving:
     load_shedding: 100000
   check_objective:
     enable: false
-
 stress_test:
   enable: true
   country: RO
-  load_factor_full_window: 1.12
-  hydro_factor_full_window: 0.60
-  gas_factor_first_72h: 0.70
+  load_factor_full_window: 3.0
+  hydro_factor_full_window: 0.9
+  gas_factor_first_72h: 0.9
   scada:
-    tight_hours: 24
-    relaxed_hours: 48
-    ramp_tight_per_hour: 0.10
-    ramp_relaxed_per_hour: 0.25
+    tight_hours: 200
+    relaxed_hours: 24
+    ramp_tight_per_hour: 0.3
+    ramp_relaxed_per_hour: 0.9
   import_cap:
-    zero_hours: 48
-    half_hours: 48
-    half_factor: 0.5
+    zero_hours: 24
+    half_hours: 32
+    half_factor: 0.9

@@ -34,6 +34,38 @@ def load_template(template_path: Path) -> dict[str, Any]:
     return raw
 
 
+def resolve_template_path(base_template_path: Path, cutout_year: str = "2020") -> Path:
+    """Resolve template path based on cutout year.
+    
+    Intelligently selects year-specific templates:
+    - If cutout_year = "2023", looks for scenario_template_2023.yaml
+    - If cutout_year = "2020", uses default scenario_template.yaml
+    - Falls back to base template if year-specific not found
+    
+    Args:
+        base_template_path: Path to default template (e.g., scenario_template.yaml)
+        cutout_year: Year as string ("2020" or "2023")
+    
+    Returns:
+        Path to the template file to use
+    """
+    if cutout_year not in ("2020", "2023"):
+        return base_template_path
+    
+    # 2020 uses default template
+    if cutout_year == "2020":
+        return base_template_path
+    
+    # 2023 looks for year-specific template
+    if cutout_year == "2023":
+        year_specific = base_template_path.parent / "scenario_template_2023.yaml"
+        if year_specific.exists():
+            return year_specific
+    
+    # Fallback to default if year-specific not found
+    return base_template_path
+
+
 def dump_yaml(config: dict[str, Any]) -> str:
     return yaml.safe_dump(config, sort_keys=False)
 
@@ -118,6 +150,84 @@ def _base_config_from_inputs(
     if working_yaml and working_yaml.strip():
         return parse_working_yaml(working_yaml)
     return copy.deepcopy(template_config)
+
+
+def _apply_cutout_to_config(cfg: dict[str, Any], cutout_year: str) -> None:
+    """Apply cutout year selection to configuration.
+    
+    Sets the default_cutout in atlite section and updates electricity year.
+    Also validates that snapshot dates match the selected year.
+    
+    Args:
+        cfg: Configuration dictionary to modify in-place
+        cutout_year: Year as string ("2020" or "2023")
+    
+    Raises:
+        ValueError: If cutout_year is invalid or dates don't match year
+    """
+    if cutout_year not in ("2020", "2023"):
+        raise ValueError(f"Unsupported cutout year: {cutout_year}. Must be 2020 or 2023.")
+    
+    # Determine cutout name
+    cutout_name = f"europe-{cutout_year}-sarah3-era5"
+    
+    # Validate atlite config has both cutout definitions
+    if "atlite" not in cfg:
+        cfg["atlite"] = {}
+    
+    atlite_cfg = cfg["atlite"]
+    if "cutouts" not in atlite_cfg:
+        atlite_cfg["cutouts"] = {}
+    
+    if cutout_name not in atlite_cfg["cutouts"]:
+        raise ValueError(
+            f"Cutout {cutout_name} not defined in template. "
+            "Make sure scenario template has both 2020 and 2023 cutout definitions."
+        )
+    
+    # Set default cutout
+    atlite_cfg["default_cutout"] = cutout_name
+    
+    # Update electricity year to match cutout year
+    electricity_cfg = cfg.get("electricity", {})
+    if "estimate_renewable_capacities" in electricity_cfg:
+        electricity_cfg["estimate_renewable_capacities"]["year"] = int(cutout_year)
+    
+    # Validate snapshot dates match the year and are in correct order
+    if "snapshots" in cfg:
+        snapshots = cfg["snapshots"]
+        if isinstance(snapshots, dict) and "start" in snapshots and "end" in snapshots:
+            snap_start_str = str(snapshots["start"])
+            snap_end_str = str(snapshots["end"])
+            
+            # Extract year from date string (format: YYYY-MM-DD)
+            start_year = snap_start_str.split("-")[0] if "-" in snap_start_str else snap_start_str[:4]
+            end_year = snap_end_str.split("-")[0] if "-" in snap_end_str else snap_end_str[:4]
+            
+            # Check year matching
+            if start_year != cutout_year or end_year != cutout_year:
+                raise ValueError(
+                    f"Snapshot dates don't match cutout year {cutout_year}: "
+                    f"got {snap_start_str} to {snap_end_str}. "
+                    "Cutout year must match snapshot year."
+                )
+            
+            # Check date order (start <= end)
+            try:
+                from datetime import datetime
+                start_date = datetime.strptime(snap_start_str, "%Y-%m-%d")
+                end_date = datetime.strptime(snap_end_str, "%Y-%m-%d")
+                if start_date > end_date:
+                    raise ValueError(
+                        f"Invalid snapshot range: start date ({snap_start_str}) "
+                        f"is after end date ({snap_end_str}). "
+                        "Start date must be before or equal to end date."
+                    )
+            except ValueError as e:
+                # Re-raise if it's our custom error, otherwise just pass (format already validated)
+                if "Invalid snapshot range" in str(e):
+                    raise
+
 
 
 def _network_target(run_name: str, clusters: int) -> Path:
@@ -267,7 +377,9 @@ def build_working_config(
     inputs: ScenarioInputs,
     template_path: Path,
 ) -> dict[str, Any]:
-    template_cfg = load_template(template_path)
+    # Intelligently select template based on cutout_year
+    resolved_template_path = resolve_template_path(template_path, inputs.cutout_year)
+    template_cfg = load_template(resolved_template_path)
     working_base = _base_config_from_inputs(template_cfg, inputs.working_yaml)
     run_name = sanitize_slug(inputs.scenario_slug or "working-draft")
     return _apply_inputs_to_config(
@@ -298,7 +410,9 @@ def build_configs(
         if not baseline_net.exists():
             raise ValueError("Reference baseline network does not exist.")
 
-    template_cfg = load_template(template_path)
+    # Intelligently select template based on cutout_year
+    resolved_template_path = resolve_template_path(template_path, inputs.cutout_year)
+    template_cfg = load_template(resolved_template_path)
     working_base = _base_config_from_inputs(template_cfg, inputs.working_yaml)
 
     now_token = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
@@ -315,6 +429,7 @@ def build_configs(
         run_name=scenario_run_name,
         stress_enabled=bool(inputs.stress_enable),
     )
+    _apply_cutout_to_config(scenario_cfg, inputs.cutout_year)
 
     baseline_cfg: dict[str, Any] | None = None
     if inputs.run_mode == "paired":
@@ -324,6 +439,7 @@ def build_configs(
             run_name=baseline_run_name or "",
             stress_enabled=False,
         )
+        _apply_cutout_to_config(baseline_cfg, inputs.cutout_year)
 
     cfg_dir = repo_root / GENERATED_CONFIG_DIR
     cfg_dir.mkdir(parents=True, exist_ok=True)

@@ -40,6 +40,7 @@ class ScenarioInputs:
     clusters: int
     solver_name: str
     solver_options: str
+    cutout_year: str = "2020"  # NEW: Support 2020 (default) and 2023 cutout data
     stress_enable: bool = True
     stress: StressParams = field(default_factory=StressParams)
     reference_baseline_net: str | None = None

@@ -1,4 +1,5 @@
-# Canonical PlanUI scenario template.
+# PlanUI scenario template for 2023 data.
+# This file is used when cutout_year = 2023 is selected.
 # This file is read-only for the application.
 # The UI may load and clone it but must never overwrite it.
 
@@ -23,8 +24,8 @@ countries:
   - RS
 
 snapshots:
-  start: "2020-12-01"
-  end: "2020-12-08"
+  start: "2023-01-15"
+  end: "2023-01-22"
 
 electricity:
   co2limit_enable: true
@@ -42,7 +43,7 @@ electricity:
   estimate_renewable_capacities:
     enable: true
     from_gem: true
-    year: 2020
+    year: 2023
     expansion_limit: false
     technology_mapping:
       Offshore: offwind-ac
@@ -50,7 +51,7 @@ electricity:
       PV: solar
 
 atlite:
-  default_cutout: europe-2020-sarah3-era5
+  default_cutout: europe-2023-sarah3-era5
   cutouts:
     europe-2020-sarah3-era5:
       module: era5

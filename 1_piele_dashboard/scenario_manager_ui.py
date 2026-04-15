@@ -58,6 +58,7 @@ class ScenarioManagerUI:
         self.countries = tk.StringVar(value=str(ui.get("countries", "RO,BG,HU,RS")))
         self.snapshot_start = tk.StringVar(value=str(ui.get("snapshot_start", "2020-12-01")))
         self.snapshot_end = tk.StringVar(value=str(ui.get("snapshot_end", "2020-12-08")))
+        self.cutout_year = tk.StringVar(value=str(ui.get("cutout_year", "2020")))
         self.clusters = tk.StringVar(value=str(ui.get("clusters", "10")))
         self.solver_name = tk.StringVar(value=str(ui.get("solver_name", "highs")))
         self.solver_options = tk.StringVar(value=str(ui.get("solver_options", "highs-simplex")))
@@ -135,6 +136,7 @@ class ScenarioManagerUI:
             ("countries", self.countries, None),
             ("start", self.snapshot_start, None),
             ("end", self.snapshot_end, None),
+            ("cutout_year", self.cutout_year, ["2020", "2023"]),
             ("clusters", self.clusters, None),
             ("solver", self.solver_name, None),
             ("solver_opts", self.solver_options, None),
@@ -312,6 +314,7 @@ class ScenarioManagerUI:
             "countries": "countries",
             "start": "snapshot_start",
             "end": "snapshot_end",
+            "cutout_year": "cutout_year",
             "clusters": "clusters",
             "solver": "solver_name",
             "solver_opts": "solver_options",
@@ -372,9 +375,33 @@ class ScenarioManagerUI:
             raise ValueError(f"Invalid float for {name}: {value}") from exc
 
     def _collect_inputs(self) -> ScenarioInputs:
+        from datetime import datetime
+        
         countries = [x.strip().upper() for x in self.countries.get().split(",") if x.strip()]
         if not countries:
             countries = [self.country.get().strip().upper()]
+        
+        # Validate snapshot dates
+        start_str = self.snapshot_start.get().strip()
+        end_str = self.snapshot_end.get().strip()
+        cutout_year_str = self.cutout_year.get().strip()
+        
+        try:
+            start_date = datetime.strptime(start_str, "%Y-%m-%d")
+            end_date = datetime.strptime(end_str, "%Y-%m-%d")
+        except ValueError:
+            raise ValueError(f"Invalid date format. Use YYYY-MM-DD format. Got: {start_str} to {end_str}")
+        
+        # Check date order
+        if start_date > end_date:
+            raise ValueError(f"Start date ({start_str}) must be before or equal to end date ({end_str}).")
+        
+        # Check year matches cutout year
+        if start_date.year != int(cutout_year_str):
+            raise ValueError(f"Start date year ({start_date.year}) doesn't match cutout year ({cutout_year_str}).")
+        if end_date.year != int(cutout_year_str):
+            raise ValueError(f"End date year ({end_date.year}) doesn't match cutout year ({cutout_year_str}).")
+        
         return ScenarioInputs(
             run_mode=self.run_mode.get().strip(),  # type: ignore[arg-type]
             output_name=self.output_name.get().strip(),
@@ -386,6 +413,7 @@ class ScenarioManagerUI:
             clusters=self._parse_int(self.clusters.get().strip(), "clusters"),
             solver_name=self.solver_name.get().strip(),
             solver_options=self.solver_options.get().strip(),
+            cutout_year=self.cutout_year.get().strip(),
             stress_enable=bool(self.stress_enable.get()),
             stress=StressParams(
                 load_factor_full_window=self._parse_float(self.stress_load.get(), "stress_load"),
@@ -703,6 +731,7 @@ class ScenarioManagerUI:
             "countries": self.countries.get(),
             "snapshot_start": self.snapshot_start.get(),
             "snapshot_end": self.snapshot_end.get(),
+            "cutout_year": self.cutout_year.get(),
             "clusters": self.clusters.get(),
             "solver_name": self.solver_name.get(),
             "solver_options": self.solver_options.get(),
